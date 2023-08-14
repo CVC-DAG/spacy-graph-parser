@@ -1,12 +1,13 @@
 import spacy
 from src.nlp.parsing import SpacyTextParser
 
-QUERY = 'Orden aprobando las oposiciones celebradas para proveer 25 Auxiliares de Dibujo líneal\
-    y nombrando Auxiliares numerarios de Dibujo lineal de las Escuelas de Artes y Oficios Artísticos que se citan a los señores que se mencionan.\
-    Confiriendo, promoviendo y nombrando á los sujetos que se expresan. Fallecimiento en Oporto del Excmo. Sr. D. Francisco de Taranco y Llano.\
-    Esta persona corre una carrera.\
-    Petersburgo, 7 de febrero de 1808.- \
-    De los 180 regimientos que había reunido el general Buxhoeden de orden del Emperador en Lituania, sólo quedan 30 en esta provincia, mientras los demás van caminando hacia las fronteras de Turquía y las de Suecia.'
+QUERY = 'Anuncio del Tribunal que ha de juzgar el concurso-oposición convocado para la provisión de la cátedra de "Economía, \
+    Organización y Legislación" vacante en la Escuela Técnica Superior de Ingenieros Industriales de Bilbao, por el que se señala lugar,\
+    día y hora para la presentación de los opositores admitidos.\
+    Decreto 2319/1959, de 24 de diciembre, por el que se declara la urgencia de la ocupación de los terrenos afectados por las obras de prolongación de mina y captación de aguas con destino al Municipio de Mellid (La Coruña).\
+    Real orden recordando a los funcionarios de Hacienda de todas las categorías la prohibición legal de ser Agentes o Representantes de toda persona, entidad o\
+    Corporación que tuviera asuntos pendientes en las oficinas centrales o provinciales de la Hacienda pública; y dando prevenciones para la tramitación de expedientes y\
+    despacho de asuntos, para las operaciones de ingreso y pagos, y para señalar horas para recibir al público y Agentes de Negocios.'
     
 if __name__ == '__main__':
 

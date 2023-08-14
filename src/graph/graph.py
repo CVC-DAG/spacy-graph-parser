@@ -118,9 +118,10 @@ class Graph:
         return matching_nodes
     
     def to_nx_graph(self):
-        nx_graph = nx.Graph()
+        nx_graph = nx.DiGraph()
         for node in self.nodes:
             node_instance = self.nodes[node]
+
             nx_graph.add_node(node, **vars(node_instance))
         
         for edge in self.edges:

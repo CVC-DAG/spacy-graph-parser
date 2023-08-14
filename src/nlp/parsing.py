@@ -14,6 +14,7 @@ class SpacyTextParser:
     
     belongs_to_ner = 'belongs_to_ner'
     has_attr = 'has_attr'
+    in_context = 'in_context'
     
     entity = '<ENT>'
     
@@ -65,14 +66,29 @@ class SpacyTextParser:
                 self.graph.add_node(ner_node)
                 self.graph.add_edge(relation)
             
-    
+
     def parse_verbs_to_subject(self):
         '''
         Here we will find verbs to stablish SUBJ --- verb ---> OBJ chains
         
         '''
-        pass
-        
+        for token in self.sntc:
+            
+            if token.pos_ == 'VERB' and token.head !=token:
+                subj = token.head 
+                if subj.dep_ !='root':
+                    
+                    subj_node = self.construct_node_after_check(subj)
+                    self.graph.add_node(subj_node)
+                    
+                    for noun in [a for a in token.children if a.pos_ == 'NOUN' and a.dep_ == 'obj']: 
+                        object_node = self.construct_node_after_check(noun)
+                        edge = Edge(subj_node.id, object_node.id, token.text)
+                        
+                        self.graph.add_node(object_node)
+                        self.graph.add_edge(edge)
+    
+    
     def get_node_in_graph(self, token):
         nodes = self.graph.get_nodes_by(token.text, by = 'text')
         matches = [node for node in nodes if node.attributes['spacy_token'].i == token.i]
@@ -114,12 +130,7 @@ class SpacyTextParser:
         
         
         '''
-        for chunk in self.sntc.noun_chunks:
-            root_token = chunk.root
-            head_token = root_token.head
-            dependency_label = root_token.dep_
-            
-            print(f"Root: {root_token.text}, Head: {head_token.text}, Relationship: {dependency_label}")
+        return None
         
     def parse_quantities(self):
         for token in self.sntc:
