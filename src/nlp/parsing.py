@@ -18,10 +18,11 @@ class SpacyTextParser:
     
     entity = '<ENT>'
     
-    def __init__(self, model = 'es_core_news_sm', sentence = None) -> None:
+    def __init__(self, model = 'es_core_news_sm', sentence = None, position_sensitive = False) -> None:
         self.nlp_model = spacy.load(model) if isinstance(model, str) else model # passig the model itself as efficiency measure
         self.sntc = None # don't parse it twice!
         self.graph = Graph()
+        self.position_sensitive = position_sensitive
         if sentence is not None: self.parse_sentence(sentence)
         
         self.node_unique_ids = -1 # Keep Control On graph IDs
@@ -91,7 +92,7 @@ class SpacyTextParser:
     
     def get_node_in_graph(self, token):
         nodes = self.graph.get_nodes_by(token.text, by = 'text')
-        matches = [node for node in nodes if node.attributes['spacy_token'].i == token.i]
+        matches = [node for node in nodes if (node.attributes['spacy_token'].i == token.i and self.position_sensitive) or (node.text.lower() == token.text.lower() and not self.position_sensitive)]
         if len(matches):
             assert len(matches) == 1, f'Duplicated node, {token.text}'
             return matches[0]
