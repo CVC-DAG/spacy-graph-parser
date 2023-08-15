@@ -87,13 +87,17 @@ class Graph:
         """
         self.nodes[node.id] = node
 
-    def add_edge(self, edge):
+    def add_edge(self, edge, force = False):
         """
         Add an edge to the graph.
 
         Args:
             edge (Edge): Edge object to be added to the graph.
         """
+        if not force:
+            for used_edge in self.edges:
+                if sorted([edge.source_id, edge.target_id]) == sorted([used_edge.source_id, used_edge.target_id]):
+                    return None # Don't duplicate edges
         self.edges.append(edge)
     
     def get_nodes_by(self, query, by='text'):

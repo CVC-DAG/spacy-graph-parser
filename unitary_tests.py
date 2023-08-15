@@ -40,6 +40,13 @@ if __name__ == '__main__':
         
     except Exception as e:
         print(f"Quantities is not working, reason: {e}")
+        
+        
+    try:
+        parser.parse_preps()
+        
+    except Exception as e:
+        print(f"Prepositions is not working, reason: {e}")
     parser.graph.plot()
 
 else: raise AssertionError('Just your luck! Unitary tests should never be imported.')

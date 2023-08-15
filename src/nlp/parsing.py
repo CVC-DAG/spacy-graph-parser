@@ -13,6 +13,7 @@ def find_deepest_children(token_childrens, previous_token, chain = {}):
 class SpacyTextParser:
     
     belongs_to_ner = 'belongs_to_ner'
+    belongs_to_chunk = 'belongs_to_ner'
     has_attr = 'has_attr'
     quantity_edge = 'has_quantity'
     in_context = 'in_context'
@@ -20,7 +21,7 @@ class SpacyTextParser:
     verb = 'does'
     object_indicator = 'a'
     
-    entity = '<ENT>'
+    entity = 'noun_chunk'
     
     def __init__(self, model = 'es_core_news_sm', sentence = None, position_sensitive = False) -> None:
         self.nlp_model = spacy.load(model) if isinstance(model, str) else model # passig the model itself as efficiency measure
@@ -50,6 +51,7 @@ class SpacyTextParser:
         return None
         
     def construct_node_after_check(self, token):
+
         node_in_graph = self.get_node_in_graph(token)
         if node_in_graph is None: node_in_graph = Node(self._get_new_id(), token.text, token.ent_type_, token.pos_, {'spacy_token': token, 'bio': token.ent_iob_, 'position': token.i, 'type': 'word'})
         return node_in_graph
@@ -133,15 +135,63 @@ class SpacyTextParser:
         
         
         '''
-        for token in self.sntc:
-            if "importación" == token.text:
-                print(token, token.dep_, token.pos_)
-                print(list(token.children))
-                print(list(token.ancestors))
-                print(token.head)
+        junk = ['PUNCT', 'DET', 'ADP', 'CCONJ', 'NUM']
+        for chunk in self.sntc.noun_chunks:
+            # if len([x for x in chunk if not x.pos_ in junk]) == 1: continue 
 
-        return None
-    
+            
+            chunk_node = Node(self._get_new_id(), f'<{self.entity}>', None, None, {'type': self.entity, 'spacy_token': chunk.root})
+            self.graph.add_node(chunk_node)
+            for token in list(chunk) + list(chunk.subtree):
+                if token.pos_ in junk: continue
+                
+                node = self.construct_node_after_check(token)
+                self.graph.add_node(node)
+
+                if token.pos_ in ['NOUN', 'PROPN']:
+                    
+                    edge = Edge(node.id, chunk_node.id, self.belongs_to_chunk)
+                    
+
+                elif token.pos_ in ['ADJ']:
+            
+                    edge = Edge(chunk_node.id, node.id, self.has_attr)
+                    
+                
+                elif token.pos_ in ['ADV']:
+                    edge = Edge(chunk_node.id, node.id, self.in_context)
+                    
+                    for child in token.children:
+                        child_node = self.construct_node_after_check(child)
+                        self.graph.add_node(child_node)
+
+                        attr_edge = Edge(node.id, child_node.id, self.has_attr)
+                        self.graph.add_edge(attr_edge)
+                        
+                        if token.head != token: 
+
+                            head_token = self.construct_node_after_check(token.head)
+                            self.graph.add_node(head_token)
+                            head_edge = Edge(child_node.id, head_token.id, self.in_context)
+                            self.graph.add_edge(head_edge)    
+                else:
+
+                    continue              
+                
+                self.graph.add_edge(edge)
+                
+    def parse_preps(self):
+
+        for token in self.sntc:
+            debug = False
+            if debug: print(token, token.dep_, token.pos_, token.head)
+            if token.pos_ == "PROPN":
+                subj = token
+                obj = token.head
+
+                if subj!=obj:
+                    self.create_connection(subj, obj, self.in_context)
+                
     
     def parse_quantities(self):
         for token in self.sntc:
@@ -150,4 +200,4 @@ class SpacyTextParser:
                 quantity_object = token.head
                 self.create_connection(quantity_object, quantity, self.quantity_edge)            
                 for obj in list(quantity_object.children):
-                    if obj.dep_ == 'obj': self.create_connection(quantity_object, obj,self.in_context )
+                    if obj.dep_ == 'obj': self.create_connection(quantity_object, obj, self.in_context)
