@@ -1,7 +1,7 @@
 import spacy
 from src.nlp.parsing import SpacyTextParser
 
-QUERY = '\n'.join(open('media/gazeta.txt', 'r').readlines())
+QUERY = '\n'.join(open('media/single.txt', 'r').readlines())
     
 if __name__ == '__main__':
 
@@ -9,6 +9,7 @@ if __name__ == '__main__':
     model = spacy.load('es_core_news_sm')
     parser = SpacyTextParser(model = model, position_sensitive = True)
     parser.parse_sentence(QUERY)
+    print(QUERY)
 
     try:
         parser.ner_tagger()

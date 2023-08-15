@@ -14,7 +14,9 @@ class SpacyTextParser:
     
     belongs_to_ner = 'belongs_to_ner'
     has_attr = 'has_attr'
+    quantity_edge = 'has_quantity'
     in_context = 'in_context'
+    is_object = 'has_object'
     
     entity = '<ENT>'
     
@@ -35,6 +37,33 @@ class SpacyTextParser:
     def _get_new_id(self):
         self.node_unique_ids = self.node_unique_ids + 1
         return self.node_unique_ids
+    
+    def get_node_in_graph(self, token):
+        nodes = self.graph.get_nodes_by(token.text, by = 'text')
+        matches = [node for node in nodes if (node.attributes['spacy_token'].i == token.i and self.position_sensitive) or (node.text.lower() == token.text.lower() and not self.position_sensitive)]
+        if len(matches):
+            assert len(matches) == 1, f'Duplicated node, {token.text}'
+            return matches[0]
+        
+        return None
+        
+    def construct_node_after_check(self, token):
+        node_in_graph = self.get_node_in_graph(token)
+        if node_in_graph is None: node_in_graph = Node(self._get_new_id(), token.text, token.ent_type_, token.pos_, {'spacy_token': token, 'bio': token.ent_iob_, 'position': token.i, 'type': 'word'})
+        return node_in_graph
+
+    def create_connection(self, token_1, token_2, label):
+        
+        node_1 = self.construct_node_after_check(token_1)
+        node_2 = self.construct_node_after_check(token_2)
+        
+        self.graph.add_node(node_1)
+        self.graph.add_node(node_2)
+        
+        edge = Edge(node_1.id, node_2.id, label=label)
+        self.graph.add_edge(edge)
+        
+        return node_1, node_2, edge
 
     def ner_tagger(self):
         '''
@@ -74,36 +103,12 @@ class SpacyTextParser:
         
         '''
         for token in self.sntc:
-            
-            if token.pos_ == 'VERB' and token.head !=token:
-                subj = token.head 
-                if subj.dep_ !='root':
-                    
-                    subj_node = self.construct_node_after_check(subj)
-                    self.graph.add_node(subj_node)
-                    
-                    for noun in [a for a in token.children if a.pos_ == 'NOUN' and a.dep_ == 'obj']: 
-                        object_node = self.construct_node_after_check(noun)
-                        edge = Edge(subj_node.id, object_node.id, token.text)
-                        
-                        self.graph.add_node(object_node)
-                        self.graph.add_edge(edge)
-    
-    
-    def get_node_in_graph(self, token):
-        nodes = self.graph.get_nodes_by(token.text, by = 'text')
-        matches = [node for node in nodes if (node.attributes['spacy_token'].i == token.i and self.position_sensitive) or (node.text.lower() == token.text.lower() and not self.position_sensitive)]
-        if len(matches):
-            assert len(matches) == 1, f'Duplicated node, {token.text}'
-            return matches[0]
-        
-        return None
-        
-    def construct_node_after_check(self, token):
-        node_in_graph = self.get_node_in_graph(token)
-        if node_in_graph is None: node_in_graph = Node(self._get_new_id(), token.text, token.ent_type_, token.pos_, {'spacy_token': token, 'bio': token.ent_iob_, 'position': token.i, 'type': 'word'})
-        return node_in_graph
-
+            if "subj" in token.dep_:
+                subject = token
+                verb = token.head
+                obj = [child for child in token.head.children if "obj" in child.dep_]
+                if obj: self.create_connection(subject, obj[0], verb.text)
+       
     def parse_attribute_to_subject(self):
         '''
         Here we will find attributes to stablish SUBJ --- IS ---> ATTR chains
@@ -111,19 +116,11 @@ class SpacyTextParser:
         '''
         for token in self.sntc:
             
-            if token.dep_ == "amod":
-                
+            if token.dep_ in ["amod", "attr"]:
+
                 adjective = token
-                noun = token.head
-                
-                adj_node = self.construct_node_after_check(adjective)
-                noun_node = self.construct_node_after_check(noun)
-                
-                self.graph.add_node(adj_node)
-                self.graph.add_node(noun_node)
-                
-                edge = Edge(noun_node.id, adj_node.id, label=self.has_attr)
-                self.graph.add_edge(edge)
+                noun = token.head               
+                self.create_connection(noun, adjective, self.has_attr)
     
     def parse_chunks_and_cd(self):
         '''
@@ -131,20 +128,15 @@ class SpacyTextParser:
         
         
         '''
+
         return None
-        
+    
+    
     def parse_quantities(self):
         for token in self.sntc:
             if token.pos_ == "NUM":
                 quantity = token
                 quantity_object = token.head
-                if quantity_object:
-                    quantity_node = self.construct_node_after_check(quantity)
-                    quantity_object_node = self.construct_node_after_check(quantity_object)
-                    
-                    label = self.has_attr if quantity_object.head is None else quantity_object.head.text
-                    self.graph.add_node(quantity_node)
-                    self.graph.add_node(quantity_object_node)
-                    self.graph.add_edge(Edge(quantity_object_node.id, quantity_node.id, label=label))
-            
-            
+                self.create_connection(quantity_object, quantity, self.quantity_edge)            
+                for obj in list(quantity_object.children):
+                    if obj.dep_ == 'obj': self.create_connection(quantity_object, obj,self.in_context )
