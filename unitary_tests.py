@@ -1,4 +1,5 @@
 import spacy
+from spacy import displacy
 from src.nlp.parsing import SpacyTextParser
 
 QUERY = '\n'.join(open('media/single.txt', 'r').readlines())
@@ -48,5 +49,6 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Prepositions is not working, reason: {e}")
     parser.graph.plot()
+    displacy.serve(parser.sntc,)
 
 else: raise AssertionError('Just your luck! Unitary tests should never be imported.')
