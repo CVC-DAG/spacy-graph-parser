@@ -17,6 +17,8 @@ class SpacyTextParser:
     quantity_edge = 'has_quantity'
     in_context = 'in_context'
     is_object = 'has_object'
+    verb = 'does'
+    object_indicator = 'a'
     
     entity = '<ENT>'
     
@@ -107,7 +109,10 @@ class SpacyTextParser:
                 subject = token
                 verb = token.head
                 obj = [child for child in token.head.children if "obj" in child.dep_]
-                if obj: self.create_connection(subject, obj[0], verb.text)
+                if obj: 
+                    
+                    self.create_connection(subject, verb, self.verb)
+                    self.create_connection(verb, obj[0], self.object_indicator)
        
     def parse_attribute_to_subject(self):
         '''
@@ -116,7 +121,7 @@ class SpacyTextParser:
         '''
         for token in self.sntc:
             
-            if token.dep_ in ["amod", "attr"]:
+            if token.dep_ in ["amod", "attr", "adj"]:
 
                 adjective = token
                 noun = token.head               
@@ -128,6 +133,12 @@ class SpacyTextParser:
         
         
         '''
+        for token in self.sntc:
+            if "importación" == token.text:
+                print(token, token.dep_, token.pos_)
+                print(list(token.children))
+                print(list(token.ancestors))
+                print(token.head)
 
         return None
     
