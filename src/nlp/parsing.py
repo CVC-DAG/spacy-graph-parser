@@ -12,16 +12,21 @@ def find_deepest_children(token_childrens, previous_token, chain = {}):
 
 class SpacyTextParser:
     
-    belongs_to_ner = 'belongs_to_ner'
-    belongs_to_chunk = 'belongs_to_ner'
-    has_attr = 'has_attr'
-    quantity_edge = 'has_quantity'
-    in_context = 'in_context'
-    is_object = 'has_object'
-    verb = 'does'
-    object_indicator = 'a'
+
+    obj_to_attribute_edge = 'has_attribute'
+    contextual_relationship = 'in_context_of' # Els adverbis provoquen contextos molt diversos que relacionen tokens
+    quantity_modifier_edge = 'has_quantity'
     
-    entity = 'noun_chunk'
+    obj_to_ner_edge = 'is_named_entity'
+    obj_to_chunk_edge = 'is_noun_chunk' # No tots els sintagmes nominals són entitats
+    
+    subj_to_verb_edge = 'performs_action'
+    verb_to_obj_edge = 'receives_action'
+    
+    
+    named_entity_token = '< NET >'
+    chunk_entity_token = '< CET >'
+    
     
     def __init__(self, model = 'es_core_news_sm', sentence = None, position_sensitive = False) -> None:
         self.nlp_model = spacy.load(model) if isinstance(model, str) else model # passig the model itself as efficiency measure
@@ -90,12 +95,12 @@ class SpacyTextParser:
             assert len(category) == 1, 'Multiple categories for a single NER group found.'
             
             node_group_id = self._get_new_id()
-            ner_main_node = Node(node_group_id, f"<{category[0]}>", category[0], None, {'type': f'{self.entity}'})
+            ner_main_node = Node(node_group_id, f"<{category[0]}>", category[0], None, {'type': f'{self.named_entity_token}'})
             self.graph.add_node(ner_main_node)
             
             for named_entity in group:
                 ner_node = self.construct_node_after_check(named_entity['token'])
-                relation = Edge(ner_node.id, node_group_id, self.belongs_to_ner)
+                relation = Edge(ner_node.id, node_group_id, self.obj_to_ner_edge)
 
                 self.graph.add_node(ner_node)
                 self.graph.add_edge(relation)
@@ -113,8 +118,8 @@ class SpacyTextParser:
                 obj = [child for child in token.head.children if "obj" in child.dep_]
                 if obj: 
                     
-                    self.create_connection(subject, verb, self.verb)
-                    self.create_connection(verb, obj[0], self.object_indicator)
+                    self.create_connection(subject, verb, self.subj_to_verb_edge)
+                    self.create_connection(verb, obj[0], self.verb_to_obj_edge)
        
     def parse_attribute_to_subject(self):
         '''
@@ -127,7 +132,7 @@ class SpacyTextParser:
 
                 adjective = token
                 noun = token.head               
-                self.create_connection(noun, adjective, self.has_attr)
+                self.create_connection(noun, adjective, self.obj_to_attribute_edge)
     
     def parse_chunks_and_cd(self):
         '''
@@ -140,7 +145,7 @@ class SpacyTextParser:
             # if len([x for x in chunk if not x.pos_ in junk]) == 1: continue 
 
             
-            chunk_node = Node(self._get_new_id(), f'<{self.entity}>', None, None, {'type': self.entity, 'spacy_token': chunk.root})
+            chunk_node = Node(self._get_new_id(), self.chunk_entity_token, None, None, {'type': self.chunk_entity_token, 'spacy_token': chunk.root})
             self.graph.add_node(chunk_node)
             for token in list(chunk) + list(chunk.subtree):
                 if token.pos_ in junk: continue
@@ -150,29 +155,30 @@ class SpacyTextParser:
 
                 if token.pos_ in ['NOUN', 'PROPN']:
                     
-                    edge = Edge(node.id, chunk_node.id, self.belongs_to_chunk)
+                    edge = Edge(node.id, chunk_node.id, self.obj_to_chunk_edge)
                     
 
                 elif token.pos_ in ['ADJ']:
             
-                    edge = Edge(chunk_node.id, node.id, self.has_attr)
+                    edge = Edge(chunk_node.id, node.id, self.obj_to_attribute_edge)
                     
                 
                 elif token.pos_ in ['ADV']:
-                    edge = Edge(chunk_node.id, node.id, self.in_context)
+                    # TODO: Definir una mica millor que es busca aquí
+                    edge = Edge(chunk_node.id, node.id, self.contextual_relationship)
                     
                     for child in token.children:
                         child_node = self.construct_node_after_check(child)
                         self.graph.add_node(child_node)
 
-                        attr_edge = Edge(node.id, child_node.id, self.has_attr)
+                        attr_edge = Edge(node.id, child_node.id, self.obj_to_attribute_edge)
                         self.graph.add_edge(attr_edge)
                         
                         if token.head != token: 
 
                             head_token = self.construct_node_after_check(token.head)
                             self.graph.add_node(head_token)
-                            head_edge = Edge(child_node.id, head_token.id, self.in_context)
+                            head_edge = Edge(child_node.id, head_token.id, self.contextual_relationship)
                             self.graph.add_edge(head_edge)    
                 else:
 
@@ -190,7 +196,8 @@ class SpacyTextParser:
                 obj = token.head
 
                 if subj!=obj:
-                    self.create_connection(subj, obj, self.in_context)
+                    self.create_connection(subj, obj, self.contextual_relationship) # In context perque busquem el contexte al qual es refereix una preopsició.
+                    # El noi _que_ volia correr. El que porta a que el contexte de correr ve donat pel noi.
                 
     
     def parse_quantities(self):
@@ -198,6 +205,6 @@ class SpacyTextParser:
             if token.pos_ == "NUM":
                 quantity = token
                 quantity_object = token.head
-                self.create_connection(quantity_object, quantity, self.quantity_edge)            
+                self.create_connection(quantity_object, quantity, self.quantity_modifier_edge)            
                 for obj in list(quantity_object.children):
-                    if obj.dep_ == 'obj': self.create_connection(quantity_object, obj, self.in_context)
+                    if obj.dep_ == 'obj': self.create_connection(quantity_object, obj, self.contextual_relationship)
