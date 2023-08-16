@@ -1,6 +1,7 @@
 import spacy
 from spacy import displacy
 from src.nlp.parsing import SpacyTextParser
+import networkx as nx
 
 QUERY = '\n'.join(open('media/single.txt', 'r').readlines())
     
@@ -49,6 +50,9 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Prepositions is not working, reason: {e}")
     parser.graph.plot()
+    nxgraph = parser.graph.to_nx_graph()
+    nx.write_gexf(nxgraph, 'tmp.gexf')
+    
     # displacy.serve(parser.sntc,)
 
 else: raise AssertionError('Just your luck! Unitary tests should never be imported.')
