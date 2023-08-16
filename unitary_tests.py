@@ -51,6 +51,7 @@ if __name__ == '__main__':
         print(f"Prepositions is not working, reason: {e}")
     parser.graph.plot()
     nxgraph = parser.graph.to_nx_graph()
+    print(nxgraph)
     nx.write_gexf(nxgraph, 'tmp.gexf')
     
     # displacy.serve(parser.sntc,)

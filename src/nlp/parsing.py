@@ -58,7 +58,7 @@ class SpacyTextParser:
     def construct_node_after_check(self, token):
 
         node_in_graph = self.get_node_in_graph(token)
-        if node_in_graph is None: node_in_graph = Node(self._get_new_id(), token.text, token.ent_type_, token.pos_, {'spacy_token': token, 'bio': token.ent_iob_, 'position': token.i, 'type': 'word'})
+        if node_in_graph is None: node_in_graph = Node(self._get_new_id(), token.text, token.ent_type_, token.pos_, {'spacy_token': token, 'bio': token.ent_iob_, 'position': token.i, 'type_': 'word'})
         return node_in_graph
 
     def create_connection(self, token_1, token_2, label):
@@ -95,7 +95,7 @@ class SpacyTextParser:
             assert len(category) == 1, 'Multiple categories for a single NER group found.'
             
             node_group_id = self._get_new_id()
-            ner_main_node = Node(node_group_id, f"<{category[0]}>", category[0], None, {'type': f'{self.named_entity_token}'})
+            ner_main_node = Node(node_group_id, f"<{category[0]}>", category[0], None, {'type_': f'{self.named_entity_token}'})
             self.graph.add_node(ner_main_node)
             
             for named_entity in group:
@@ -145,7 +145,7 @@ class SpacyTextParser:
             # if len([x for x in chunk if not x.pos_ in junk]) == 1: continue 
 
             
-            chunk_node = Node(self._get_new_id(), self.chunk_entity_token, None, None, {'type': self.chunk_entity_token, 'spacy_token': chunk.root})
+            chunk_node = Node(self._get_new_id(), self.chunk_entity_token, None, None, {'type_': self.chunk_entity_token, 'spacy_token': chunk.root})
             self.graph.add_node(chunk_node)
             for token in list(chunk) + list(chunk.subtree):
                 if token.pos_ in junk or token.pos_ not in ['NOUN', 'PROPN', 'ADJ', 'ADV', 'VERB']: continue

@@ -126,7 +126,7 @@ class Graph:
         for node in self.nodes:
             node_instance = self.nodes[node]
 
-            nx_graph.add_node(node, **vars(node_instance))
+            nx_graph.add_node(node, **{key: value for key, value in vars(node_instance).items() if value is not None})
         
         for edge in self.edges:
             nx_graph.add_edge(edge.source_id, edge.target_id, label = edge.label)
