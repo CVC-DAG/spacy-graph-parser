@@ -7,7 +7,7 @@ QUERY = '\n'.join(open('media/single.txt', 'r').readlines())
 if __name__ == '__main__':
 
     # NER FOR QUERY #
-    model = spacy.load('es_core_news_sm')
+    model = spacy.load('es_core_news_lg')
     parser = SpacyTextParser(model = model, position_sensitive = True)
     parser.parse_sentence(QUERY)
     print(QUERY)
