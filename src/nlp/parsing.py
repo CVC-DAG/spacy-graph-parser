@@ -148,13 +148,12 @@ class SpacyTextParser:
             chunk_node = Node(self._get_new_id(), self.chunk_entity_token, None, None, {'type': self.chunk_entity_token, 'spacy_token': chunk.root})
             self.graph.add_node(chunk_node)
             for token in list(chunk) + list(chunk.subtree):
-                if token.pos_ in junk: continue
+                if token.pos_ in junk or token.pos_ not in ['NOUN', 'PROPN', 'ADJ', 'ADV', 'VERB']: continue
                 
                 node = self.construct_node_after_check(token)
                 self.graph.add_node(node)
 
                 if token.pos_ in ['NOUN', 'PROPN']:
-                    
                     edge = Edge(node.id, chunk_node.id, self.obj_to_chunk_edge)
                     
 
@@ -179,9 +178,11 @@ class SpacyTextParser:
                             head_token = self.construct_node_after_check(token.head)
                             self.graph.add_node(head_token)
                             head_edge = Edge(child_node.id, head_token.id, self.contextual_relationship)
-                            self.graph.add_edge(head_edge)    
+                            self.graph.add_edge(head_edge)
+                elif token.pos_ in ['VERB']:
+                    self.create_connection(token.head, token, self.verb_to_obj_edge)
+                    edge = Edge(chunk_node.id, node.id, self.subj_to_verb_edge)
                 else:
-
                     continue              
                 
                 self.graph.add_edge(edge)
