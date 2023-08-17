@@ -17,6 +17,8 @@ def plot_graph_from_nx(graph, attr='text', where='tp.png', figsize=(32, 32), pru
     
     if isinstance(where, str):
         plt.savefig(where)
+        plt.clf()
+
     else:
         plt.show()
 
