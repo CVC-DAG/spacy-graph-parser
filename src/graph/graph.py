@@ -133,8 +133,8 @@ class Graph:
             
         return nx_graph
     
-    def plot(self):
-        plot_graph_from_nx(self.to_nx_graph())
+    def plot(self, where = 'tmp.png'):
+        plot_graph_from_nx(self.to_nx_graph(), where = where)
 
     def __str__(self):
         graph_str = "Graph:\n"
