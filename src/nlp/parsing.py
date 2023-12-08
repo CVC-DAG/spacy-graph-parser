@@ -48,17 +48,16 @@ class SpacyTextParser:
     
     def get_node_in_graph(self, token):
         nodes = self.graph.get_nodes_by(token.text, by = 'text')
-        matches = [node for node in nodes if (node.attributes['spacy_token'].i == token.i and self.position_sensitive) or (node.text.lower() == token.text.lower() and not self.position_sensitive)]
-        if len(matches):
-            assert len(matches) == 1, f'Duplicated node, {token.text}'
-            return matches[0]
-        
+        matches = [node for node in nodes if (node.attributes['position'] == token.i and self.position_sensitive) or (node.text.lower() == token.text.lower() and not self.position_sensitive)]
+        # if len(matches):
+        #     assert len(matches) == 1, f'Duplicated node, {token.text}'
+        #     return matches[0]
         return None
         
     def construct_node_after_check(self, token):
 
         node_in_graph = self.get_node_in_graph(token)
-        if node_in_graph is None: node_in_graph = Node(self._get_new_id(), token.text, token.ent_type_, token.pos_, {'spacy_token': token, 'bio': token.ent_iob_, 'position': token.i, 'type_': 'word'})
+        if node_in_graph is None: node_in_graph = Node(self._get_new_id(), token.text, token.ent_type_, token.pos_, {'spacy_token': str(token), 'bio': token.ent_iob_, 'position': token.i, 'type_': 'word'})
         return node_in_graph
 
     def create_connection(self, token_1, token_2, label):
